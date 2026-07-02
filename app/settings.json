@@ -2,5 +2,5 @@
     "check_url": "https://api-kesehatan.jakarta.go.id/api/",
     "check_interval_minutes": 5,
     "check_schedule": "*/5 * * * *",
-    "timeout_seconds": 10
+    "timeout_seconds": 9
 }

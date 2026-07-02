@@ -35,7 +35,7 @@ function serviceAuditorLogDirectory(string $url, array $config): string
 function serviceAuditorLogFilePath(string $url, array $config): string
 {
     $directory = serviceAuditorLogDirectory($url, $config);
-    $timestamp = date('Y-m-d-H-i-s');
+    $timestamp = date('Y-m-d');
 
     return $directory . '/' . $timestamp . '.' . $config['log_extension'];
 }
@@ -73,10 +73,28 @@ function serviceAuditorRunCheck(array $config): array
     ];
 
     $logFile = serviceAuditorLogFilePath($config['check_url'], $config);
-    file_put_contents($logFile, json_encode($result, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES) . PHP_EOL);
+    serviceAuditorAppendDailyLog($logFile, $result);
     $result['log_file'] = $logFile;
 
     return $result;
+}
+
+function serviceAuditorAppendDailyLog(string $logFile, array $entry): void
+{
+    $records = [];
+
+    if (is_file($logFile)) {
+        $contents = file_get_contents($logFile);
+        if ($contents !== false) {
+            $decoded = json_decode($contents, true);
+            if (is_array($decoded)) {
+                $records = $decoded;
+            }
+        }
+    }
+
+    $records[] = $entry;
+    file_put_contents($logFile, json_encode($records, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES));
 }
 
 function serviceAuditorSaveSettings(array $config, array $data): array
@@ -140,6 +158,18 @@ function serviceAuditorMarkRun(array $config): void
     @file_put_contents($lastRunFile, json_encode($payload, JSON_UNESCAPED_SLASHES));
 }
 
+function serviceAuditorRuntimeLogFile(array $config): string
+{
+    return $config['app_root'] . '/app/runtime.log';
+}
+
+function serviceAuditorWriteRuntimeLog(array $config, string $status, string $message): void
+{
+    $logFile = serviceAuditorRuntimeLogFile($config);
+    $line = '[' . gmdate('c') . '] ' . $status . ' - ' . $message . PHP_EOL;
+    @file_put_contents($logFile, $line, FILE_APPEND);
+}
+
 function serviceAuditorLoadSettings(array $config): array
 {
     $settingsPath = $config['settings_file'] ?? dirname(__DIR__) . '/app/settings.json';
@@ -186,9 +216,14 @@ function serviceAuditorLoadResults(array $config): array
         }
 
         $decoded = json_decode(trim($contents), true);
-        if (is_array($decoded)) {
-            $decoded['log_file'] = $fileInfo->getPathname();
-            $results[] = $decoded;
+        if (!is_array($decoded)) {
+            continue;
+        }
+        foreach ($decoded as $entry) {
+            if (is_array($entry)) {
+                $entry['log_file'] = $fileInfo->getPathname();
+                $results[] = $entry;
+            }
         }
     }
 

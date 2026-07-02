@@ -5,17 +5,17 @@ declare(strict_types=1);
 require_once __DIR__ . '/../app/functions.php';
 
 $config = serviceAuditorConfig();
-$results = serviceAuditorLoadResults($config);
-$summary = serviceAuditorSummarize($results);
-$recentResults = array_slice($results, 0, 8);
 
-?><!DOCTYPE html>
+?>
+<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Service Auditor</title>
     <link rel="stylesheet" href="/assets/style.css">
+
+    <script src="/assets/scripts/jquery.min.js"></script>
 </head>
 <body>
     <div class="page-shell">
@@ -37,20 +37,78 @@ $recentResults = array_slice($results, 0, 8);
             </div>
         </header>
 
+        <section class="filter-panel" id="filterPanel">
+            <div class="filter-header">
+                <h3>Filters</h3>
+                <button id="toggleFilter" class="toggle-btn" title="Minimize">−</button>
+            </div>
+            <div class="filter-container" id="filterContainer">
+                <div class="filter-group">
+                    <label>Date Filter</label>
+                    <select id="filterDate" class="filter-select">
+                        <option value="all">All</option>
+                        <option value="today">Today</option>
+                        <option value="yesterday">Yesterday</option>
+                        <option value="week">A Week</option>
+                        <option value="month">A Month</option>
+                        <option value="year">A Year</option>
+                        <option value="custom">Custom Range</option>
+                    </select>
+                    <div id="customDateRange" class="custom-range" style="display: none; margin-top: 8px;">
+                        <input type="date" id="dateFrom" placeholder="From">
+                        <input type="date" id="dateTo" placeholder="To">
+                    </div>
+                </div>
+
+                <div class="filter-group">
+                    <label>Limit</label>
+                    <select id="filterLimit" class="filter-select">
+                        <option value="unlimited">∞ Unlimited</option>
+                        <option value="10">10</option>
+                        <option value="20">20</option>
+                        <option value="25">25</option>
+                    </select>
+                </div>
+
+                <div class="filter-group">
+                    <label>Status</label>
+                    <select id="filterStatus" class="filter-select">
+                        <option value="all">All</option>
+                        <option value="success">Success</option>
+                        <option value="error">Error</option>
+                    </select>
+                </div>
+
+                <div class="filter-group">
+                    <label>Auto Reload</label>
+                    <select id="autoReload" class="filter-select">
+                        <option value="off">Off</option>
+                        <option value="1m">1 minute</option>
+                        <option value="5m">5 minutes</option>
+                        <option value="10m">10 minutes</option>
+                    </select>
+                </div>
+
+                <div class="filter-actions">
+                    <button id="applyFilter" class="btn-apply">Apply Filter</button>
+                </div>
+            </div>
+        </section>
+
         <main class="dashboard-grid">
             <section class="card stat-card success">
                 <div class="stat-title">Success</div>
-                <div class="stat-value"><?= (int) $summary['success'] ?></div>
-                <div class="stat-detail"><?= (int) $summary['success_rate'] ?>% dari total request</div>
+                <div class="stat-value" id="sum-success">-</div>
+                <div class="stat-detail" id="sum-rate">-</div>
             </section>
             <section class="card stat-card error">
                 <div class="stat-title">Error</div>
-                <div class="stat-value"><?= (int) $summary['error'] ?></div>
+                <div class="stat-value" id="sum-err">-</div>
                 <div class="stat-detail">Request yang gagal dipantau</div>
             </section>
             <section class="card stat-card total">
                 <div class="stat-title">Total Checks</div>
-                <div class="stat-value"><?= (int) $summary['total'] ?></div>
+                <div class="stat-value" id="sum-total">-</div>
                 <div class="stat-detail">Log tersimpan di folder logs</div>
             </section>
 
@@ -59,37 +117,22 @@ $recentResults = array_slice($results, 0, 8);
                     <h2>Recent Activity</h2>
                     <span class="chip">Last 8 checks</span>
                 </div>
-
-                <?php if ($recentResults === []): ?>
-                    <p class="empty-state">Belum ada log yang dibuat. Jalankan cron terlebih dahulu untuk mengisi data.</p>
-                <?php else: ?>
-                    <div class="table-wrap">
-                        <table>
-                            <thead>
-                                <tr>
-                                    <th>Time</th>
-                                    <th>Status</th>
-                                    <th>Code</th>
-                                    <th>Latency</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                <?php foreach ($recentResults as $item): ?>
-                                    <tr>
-                                        <td><?= htmlspecialchars((string) ($item['timestamp'] ?? '-')) ?></td>
-                                        <td>
-                                            <span class="badge <?= !empty($item['success']) ? 'ok' : 'bad' ?>">
-                                                <?= !empty($item['success']) ? 'Success' : 'Error' ?>
-                                            </span>
-                                        </td>
-                                        <td><?= (int) ($item['status_code'] ?? 0) ?></td>
-                                        <td><?= (int) ($item['response_time_ms'] ?? 0) ?> ms</td>
-                                    </tr>
-                                <?php endforeach; ?>
-                            </tbody>
-                        </table>
-                    </div>
-                <?php endif; ?>
+                <div class="table-wrap custom-scrollbar" style="max-height: 500px; overflow: scroll;">
+                    <table id="table-res">
+                        <thead>
+                            <tr>
+                                <th>Time</th>
+                                <th>Status</th>
+                                <th>Code</th>
+                                <th>Error</th>
+                                <th>Latency</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            
+                        </tbody>
+                    </table>
+                </div>
             </section>
 
             <section class="card">
@@ -99,6 +142,7 @@ $recentResults = array_slice($results, 0, 8);
                 <div class="steps">
                     <a class="chip" href="/settings.php">Buka Settings</a>
                     <a class="chip" href="/run-check.php">Run Check Now</a>
+                    <a class="chip" href="/runtime-log.php">Lihat Runtime Log</a>
                     <a class="chip" href="/">Refresh Dashboard</a>
                 </div>
                 <div class="card-header">
@@ -120,4 +164,6 @@ $recentResults = array_slice($results, 0, 8);
         </main>
     </div>
 </body>
+    <script src="/assets/scripts/script.js"></script>
+    <script src="/assets/scripts/filter.js"></script>
 </html>

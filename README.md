@@ -63,18 +63,14 @@ Nilai yang bisa diatur:
 - check_schedule: jadwal cron yang ditampilkan di UI
 - timeout_seconds: batas timeout request
 
-## Menjalankan Cron
+## Menjalankan Scheduler
 
-Jika menggunakan PHP lokal, tambahkan entry cron berikut:
+Karena jadwal bisa diatur secara dinamis, aplikasi tidak mengandalkan crontab statis. Sebagai gantinya, container akan memulai worker background yang setiap detik memanggil endpoint pengecekan. PHP di dalam endpoint akan memutuskan apakah pekerjaan boleh dijalankan berdasarkan interval dari settings.
 
-```bash
-*/5 * * * * php /path/to/service-auditor/cron.php >> /dev/null 2>&1
-```
-
-Jika menggunakan Docker, Anda bisa menjalankan perintah di container:
+Untuk menjalankannya secara manual:
 
 ```bash
-docker compose exec app php /var/www/html/cron.php
+docker compose exec app php /var/www/html/public/run-check.php
 ```
 
 ## Menjalankan Dashboard

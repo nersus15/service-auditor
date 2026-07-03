@@ -60,13 +60,22 @@ $(document).ready(function () {
 
     function loadDashboard() {
         var url = baseurl + "/ws/stat/dashboard";
-
-        var filters = getLocal('settings');
-        
+        var params = {};
         if (selectedUrl) {
-            url += "?url=" + encodeURIComponent(selectedUrl);
+            params.url = selectedUrl; 
         }
 
+        for (var key in filters) {
+            if(key == "date" || key == "Date") continue;
+            params[key.toLowerCase()] = filters[key];
+        }
+
+        var queryString = $.param(params);
+        if (queryString) {
+            url += "?" + queryString;
+        }
+
+        
         $.get(url).then(res => {
             // Update Summary
             var summary = res.summary;

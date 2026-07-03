@@ -33,7 +33,7 @@ $config = serviceAuditorConfig();
                     $urls = $config['check_urls'] ?? [$config['check_url']];
                     foreach ($urls as $u): 
                     ?>
-                        <option value="<?= htmlspecialchars($u) ?>"><?= htmlspecialchars($u) ?></option>
+                        <option <?= count($urls) == 1 ? 'selected' : '' ?>  value="<?= htmlspecialchars($u) ?>"><?= htmlspecialchars($u) ?></option>
                     <?php endforeach; ?>
                 </select>
             </div>

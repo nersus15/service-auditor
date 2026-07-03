@@ -8,11 +8,14 @@ class Stat {
         require_once __DIR__ . '/../../app/functions.php';
     }
     function dashboard(){
-
-        // declare(strict_types=1);
-        $config = serviceAuditorConfig();
         $url = $_GET['url'] ?? null;
-        $results = serviceAuditorLoadResults($config, $url);
+        $date = $_GET['date'] ?? 'all';
+        $limit = $_GET['limit'] ?? -1;
+        $status = $_GET['status'] ?? 'all';
+        
+       
+        $config = serviceAuditorConfig();
+        $results = serviceAuditorLoadResults($config, $date, $status, $limit, $url);
         $summary = serviceAuditorSummarize($results);
         $recentResults = $results;
 

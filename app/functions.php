@@ -220,81 +220,120 @@ function serviceAuditorLoadSettings(array $config): array
     return is_array($decoded) ? $decoded : [];
 }
 
-function serviceAuditorLoadResults(array $config, ?string $url = null): array
+function serviceAuditorLoadResults(array $config, string $date, string $status, int $limit, ?string $url = null): array
 {
     if (!is_dir($config['log_root'])) {
         return [];
     }
+    list($start, $end) = dateParsing($date, true);
+    
+    $isFileInDateRange = function(string $filePath) use ($start, $end): bool {
+        if (is_null($start)) return true;
+        $filenameOnly = pathinfo($filePath, PATHINFO_FILENAME);
+        $time = strtotime($filenameOnly);
+        if (!$time) return true;
 
-    // If URL is specified, only load logs for that URL
+        if ($time < $start) return false;
+        if (!is_null($end) && $time > $end) return false;
+
+        return true;
+    };
+
+    $results = [];
+
     if ($url !== null && $url !== '') {
         $logDir = serviceAuditorLogDirectory($url, $config);
         if (!is_dir($logDir)) {
             return [];
         }
         
-        $results = [];
         $files = glob($logDir . '/*.' . $config['log_extension']);
-        
         if (is_array($files)) {
+            rsort($files);
+
             foreach ($files as $file) {
+                if (!$isFileInDateRange($file)) continue;
+
                 $contents = file_get_contents($file);
                 if ($contents === false) continue;
                 
                 $decoded = json_decode(trim($contents), true);
                 if (!is_array($decoded)) continue;
                 
+                usort($decoded, static function (array $left, array $right): int {
+                    return strcmp($right['timestamp'] ?? '', $left['timestamp'] ?? '');
+                });
+
                 foreach ($decoded as $entry) {
                     if (is_array($entry)) {
+                        if (($status == 'error' && $entry['success']) || ($status == 'success' && !$entry['success'])) continue;
+                        
                         $entry['log_file'] = $file;
                         $results[] = $entry;
+
+                        if ($limit > 0 && count($results) >= $limit) {
+                            break 2;
+                        }
                     }
                 }
             }
         }
     } else {
-        // Load all results from all URLs
         $iterator = new RecursiveIteratorIterator(
             new RecursiveDirectoryIterator($config['log_root'], FilesystemIterator::SKIP_DOTS)
         );
 
-        $results = [];
-
+        $fileList = [];
         foreach ($iterator as $fileInfo) {
-            if (!$fileInfo->isFile()) {
-                continue;
-            }
-
+            if (!$fileInfo->isFile()) continue;
             $extension = strtolower($fileInfo->getExtension());
-            if ($extension !== $config['log_extension'] && $extension !== 'json') {
-                continue;
-            }
+            if ($extension !== $config['log_extension'] && $extension !== 'json') continue;
+            
+            $pathname = $fileInfo->getPathname();
+            if (!$isFileInDateRange($pathname)) continue;
+            
+            $fileList[] = $pathname;
+        }
 
-            $contents = file_get_contents($fileInfo->getPathname());
-            if ($contents === false) {
-                continue;
-            }
+        rsort($fileList);
+
+        foreach ($fileList as $pathname) {
+            $contents = file_get_contents($pathname);
+            if ($contents === false) continue;
 
             $decoded = json_decode(trim($contents), true);
-            if (!is_array($decoded)) {
-                continue;
-            }
+            if (!is_array($decoded)) continue;
+
+            usort($decoded, static function (array $left, array $right): int {
+                return strcmp($right['timestamp'] ?? '', $left['timestamp'] ?? '');
+            });
+
             foreach ($decoded as $entry) {
                 if (is_array($entry)) {
-                    $entry['log_file'] = $fileInfo->getPathname();
+                    if (($status == 'error' && $entry['success']) || ($status == 'success' && !$entry['success'])) continue;
+                    
+                    $entry['log_file'] = $pathname;
                     $results[] = $entry;
+
+                    if ($limit > 0 && count($results) >= $limit) {
+                        break 2; // Early exit
+                    }
                 }
             }
         }
     }
 
+    // Final sorting guarantees entries from different overlapping directories match down to the millisecond
     usort($results, static function (array $left, array $right): int {
         return strcmp($right['timestamp'] ?? '', $left['timestamp'] ?? '');
     });
 
+    if ($limit > 0) {
+        return array_slice($results, 0, $limit);
+    }
+
     return $results;
 }
-
 function serviceAuditorSummarize(array $results): array
 {
     $total = count($results);
@@ -309,5 +348,53 @@ function serviceAuditorSummarize(array $results): array
         'error' => $error,
         'success_rate' => $successRate,
         'latest' => $latest,
+    ];
+}
+
+function dateParsing(string $date, ?bool $timestamp = false): array {
+    $startTime = null;
+    $endTime = null;
+    
+    if ($date == 'all' || empty($date)) return [null, null];
+
+    // Standardize end time to end of today for relative offsets
+    $endOfToday = strtotime('today 23:59:59');
+
+    switch ($date) {
+        case 'today':
+            $startTime = strtotime('today 00:00:00');
+            $endTime = $endOfToday;
+            break;
+        case 'yesterday':
+            $startTime = strtotime('yesterday 00:00:00');
+            $endTime = strtotime('yesterday 23:59:59');
+            break;
+        case 'week':
+            $startTime = strtotime('-7 days 00:00:00');
+            $endTime = $endOfToday;
+            break;
+        case 'month':
+            $startTime = strtotime('-1 month 00:00:00');
+            $endTime = $endOfToday;
+            break;
+        case 'year':
+            $startTime = strtotime('-1 year 00:00:00');
+            $endTime = $endOfToday;
+            break;
+        default:
+            $arr = explode(" - ", $date);
+            if (count($arr) === 2) {
+                $startTime = strtotime($arr[0] . " 00:00:00");
+                $endTime = strtotime($arr[1] . " 23:59:59");
+            }
+            break;
+    }
+    
+    if ($timestamp) {
+        return [$startTime, $endTime];
+    }
+    return [
+        $startTime ? date("Y-m-d", $startTime) : null, 
+        $endTime ? date("Y-m-d", $endTime) : null
     ];
 }

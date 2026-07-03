@@ -193,6 +193,6 @@ $config = serviceAuditorConfig();
         </div>
     </div>
 </body>
-    <script src="/assets/scripts/script.js"></script>
     <script src="/assets/scripts/filter.js"></script>
+    <script src="/assets/scripts/script.js"></script>
 </html>

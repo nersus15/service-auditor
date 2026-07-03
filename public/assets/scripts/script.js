@@ -206,7 +206,8 @@ $(document).ready(function () {
         var arr = filters.date.split(" - ");
 
         if(arr.length > 1){
-            fDate.find("option[value='custom']").prop('selected', true).parent().trigger('change');
+            fDate.find("option[value='custom']").prop('selected', true);
+            fDate.trigger('change');
 
             $("#dateFrom").val(arr[0]).trigger('change');
             $("#dateTo").val(arr[1]).trigger('change');

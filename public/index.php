@@ -129,7 +129,7 @@ $config = serviceAuditorConfig();
             <section class="card wide-card">
                 <div class="card-header">
                     <h2>Recent Activity</h2>
-                    <span class="chip">Last 8 checks</span>
+                    <span id="limit" class="chip"></span>
                 </div>
                 <div class="table-wrap custom-scrollbar" style="max-height: 500px; overflow-y: scroll;">
                     <table id="table-res">

@@ -201,6 +201,12 @@ $(document).ready(function () {
             var m = filters.autoreload.replace("m", "");
             interval = setInterval(loadDashboard, (1000 * 60 * parseInt(m)));
         }
+
+        if(filters.limit > 0){
+            $("#limit").text("Last "+ filters.limit +" checks").show();
+        }else{
+            $("#limit").text("").hide();
+        }
     });
 
     function loadSettings(){
@@ -237,6 +243,12 @@ $(document).ready(function () {
         }
 
         fStatus.find("option[value='"+ filters.status +"']").prop('selected', true).parent().trigger('change');
+
+        if(filters.limit > 0){
+            $("#limit").text("Last "+ filters.limit +" checks").show();
+        }else{
+            $("#limit").text("").hide();
+        }
     }
 
 

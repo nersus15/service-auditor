@@ -28,7 +28,7 @@ $config = serviceAuditorConfig();
             <div class="hero-meta">
                 <div>
                     <span class="meta-label">Target URL</span>
-                    <strong><?= htmlspecialchars($config['check_url']) ?></strong>
+                    <strong id="currentUrl"><?= htmlspecialchars($config['check_url']) ?></strong>
                 </div>
                 <div>
                     <span class="meta-label">Interval</span>
@@ -36,6 +36,20 @@ $config = serviceAuditorConfig();
                 </div>
             </div>
         </header>
+
+        <nav class="url-navbar">
+            <div class="url-nav-container">
+                <label class="url-label">Pilih URL:</label>
+                <select id="urlSelector" class="url-select">
+                    <?php 
+                    $urls = $config['check_urls'] ?? [$config['check_url']];
+                    foreach ($urls as $u): 
+                    ?>
+                        <option value="<?= htmlspecialchars($u) ?>"><?= htmlspecialchars($u) ?></option>
+                    <?php endforeach; ?>
+                </select>
+            </div>
+        </nav>
 
         <section class="filter-panel" id="filterPanel">
             <div class="filter-header">

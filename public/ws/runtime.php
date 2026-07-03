@@ -7,8 +7,10 @@ class Runtime {
         require_once __DIR__ . '/../../app/functions.php';
     }
     function index(){
+        $url = $_GET['url'] ?? null;
+
         $config = serviceAuditorConfig();
-        $logFile = serviceAuditorRuntimeLogFile($config);
+        $logFile = serviceAuditorRuntimeLogFile($config, $url);
         $lines = [];
 
         if (is_file($logFile)) {

@@ -2,6 +2,21 @@ $(document).ready(function () {
     var host = location.host;
     var protocol = location.protocol
     var baseurl = protocol + "//" + host
+    var selectedUrl = null;
+
+    // URL selector handler
+    $("#urlSelector").on("change", function() {
+        selectedUrl = $(this).val();
+        localStorage.setItem("selectedUrl", selectedUrl);
+        loadRuntimeLog();
+    });
+
+    // Load saved URL from localStorage
+    var savedUrl = localStorage.getItem("selectedUrl");
+    if (savedUrl) {
+        selectedUrl = savedUrl;
+        $("#urlSelector").val(savedUrl);
+    }
 
     function saveLocal(key, data, ttl = null) {
         var d = {
@@ -32,6 +47,9 @@ $(document).ready(function () {
 
     function loadRuntimeLog() {
         var url = baseurl + "/ws/runtime";
+        if (selectedUrl) {
+            url += "?url=" + encodeURIComponent(selectedUrl);
+        }
         $.get(url).then(res => {
             var lines = res.data;
             // var escapedString = htmlspecialchars(lines.join('\n'));

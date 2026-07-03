@@ -3,6 +3,7 @@ $(document).ready(function () {
     var protocol = location.protocol
     var baseurl = protocol + "//" + host
     var interval = null;
+    var selectedUrl = null;
     var filters = {
         "date": null,
         "limit": -1,
@@ -12,6 +13,22 @@ $(document).ready(function () {
 
     // load settings
     loadSettings();
+
+    // URL selector handler
+    $("#urlSelector").on("change", function() {
+        selectedUrl = $(this).val();
+        $("#currentUrl").text(selectedUrl);
+        localStorage.setItem("selectedUrl", selectedUrl);
+        loadDashboard();
+    });
+
+    // Load saved URL from localStorage
+    var savedUrl = localStorage.getItem("selectedUrl");
+    if (savedUrl) {
+        selectedUrl = savedUrl;
+        $("#urlSelector").val(savedUrl);
+        $("#currentUrl").text(savedUrl);
+    }
 
 
     function saveLocal(key, data, ttl = null) {
@@ -43,6 +60,9 @@ $(document).ready(function () {
 
     function loadDashboard() {
         var url = baseurl + "/ws/stat/dashboard";
+        if (selectedUrl) {
+            url += "?url=" + encodeURIComponent(selectedUrl);
+        }
         $.get(url).then(res => {
             // Update Summary
             var summary = res.summary;

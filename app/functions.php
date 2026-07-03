@@ -23,7 +23,7 @@ function serviceAuditorSafeFolderName(string $value): string
 
 function serviceAuditorLogDirectory(string $url, array $config): string
 {
-    $folder = $config['log_root'] . '/' . serviceAuditorSafeFolderName($url);
+    $folder = $config['log_root'] . '/' . serviceAuditorSafeFolderName($url) . "/results";
 
     if (!is_dir($folder) && !mkdir($folder, 0755, true) && !is_dir($folder)) {
         throw new RuntimeException('Unable to create log directory: ' . $folder);
@@ -40,10 +40,10 @@ function serviceAuditorLogFilePath(string $url, array $config): string
     return $directory . '/' . $timestamp . '.' . $config['log_extension'];
 }
 
-function serviceAuditorRunCheck(array $config): array
+function serviceAuditorRunCheck(array $config, string $url): array
 {
     $startedAt = microtime(true);
-    $ch = curl_init($config['check_url']);
+    $ch = curl_init($url);
 
     curl_setopt_array($ch, [
         CURLOPT_RETURNTRANSFER => true,
@@ -64,7 +64,7 @@ function serviceAuditorRunCheck(array $config): array
 
     $result = [
         'timestamp' => gmdate('c'),
-        'url' => $config['check_url'],
+        'url' => $url,
         'success' => $success,
         'status_code' => $httpCode,
         'response_time_ms' => $responseTimeMs,
@@ -72,7 +72,7 @@ function serviceAuditorRunCheck(array $config): array
         'body_excerpt' => $bodyExcerpt,
     ];
 
-    $logFile = serviceAuditorLogFilePath($config['check_url'], $config);
+    $logFile = serviceAuditorLogFilePath($url, $config);
     serviceAuditorAppendDailyLog($logFile, $result);
     $result['log_file'] = $logFile;
 
@@ -100,8 +100,19 @@ function serviceAuditorAppendDailyLog(string $logFile, array $entry): void
 function serviceAuditorSaveSettings(array $config, array $data): array
 {
     $settingsPath = $config['settings_file'] ?? dirname(__DIR__) . '/app/settings.json';
+    
+    // Parse multiple URLs from textarea (handle \r\n, \n, \r)
+    $urlsInput = trim((string) ($data['check_urls'] ?? ''));
+    $urls = array_filter(array_map('trim', preg_split('/\r?\n/', $urlsInput)));
+    $urls = array_values($urls); // Re-index array
+    
+    if (empty($urls)) {
+        throw new RuntimeException('Minimal satu URL harus diisi');
+    }
+    
     $payload = [
-        'check_url' => trim((string) ($data['check_url'] ?? '')),
+        'check_urls' => $urls,
+        'check_url' => $urls[0], // Backward compatibility
         'check_interval_minutes' => max(1, (int) ($data['check_interval_minutes'] ?? 5)),
         'check_schedule' => trim((string) ($data['check_schedule'] ?? '*/5 * * * *')),
         'timeout_seconds' => max(3, (int) ($data['timeout_seconds'] ?? 10)),
@@ -122,7 +133,7 @@ function serviceAuditorLastRunFile(array $config): string
     return $config['app_root'] . '/app/.last_run.json';
 }
 
-function serviceAuditorShouldRun(array $config): bool
+function serviceAuditorShouldRun(array $config, string $url): bool
 {
     $lastRunFile = serviceAuditorLastRunFile($config);
     $intervalSeconds = max(1, (int) ($config['check_interval_minutes'] ?? 5)) * 60;
@@ -137,7 +148,10 @@ function serviceAuditorShouldRun(array $config): bool
     }
 
     $decoded = json_decode($raw, true);
-    $timestamp = $decoded['timestamp'] ?? null;
+
+    if(!isset($decoded[$url])) return true;
+
+    $timestamp = $decoded[$url]['timestamp'] ?? null;
 
     if (!is_string($timestamp)) {
         return true;
@@ -151,21 +165,39 @@ function serviceAuditorShouldRun(array $config): bool
     return (time() - $lastTime) >= $intervalSeconds;
 }
 
-function serviceAuditorMarkRun(array $config): void
+function serviceAuditorMarkRun(array $config, string $url): void
 {
     $lastRunFile = serviceAuditorLastRunFile($config);
-    $payload = ['timestamp' => gmdate('c')];
+
+    if(!is_file($lastRunFile)){
+        @file_put_contents($lastRunFile, json_encode([], JSON_UNESCAPED_SLASHES));
+    }
+
+    $raw = file_get_contents($lastRunFile);
+    $payload = [];
+    if ($raw === false) {
+        $payload["url"] = ['timestamp' => gmdate('c')];
+    }
+    $decoded = json_decode($raw, true);
+    $payload = $decoded;
+    $payload[$url] = ['timestamp' => gmdate('c')];
     @file_put_contents($lastRunFile, json_encode($payload, JSON_UNESCAPED_SLASHES));
 }
 
-function serviceAuditorRuntimeLogFile(array $config): string
+function serviceAuditorRuntimeLogFile(array $config, string $url): string
 {
-    return $config['app_root'] . '/app/runtime.log';
+    $folder = $config['log_root'] . '/' . serviceAuditorSafeFolderName($url);
+
+    if (!is_dir($folder) && !mkdir($folder, 0755, true) && !is_dir($folder)) {
+        throw new RuntimeException('Unable to create log directory: ' . $folder);
+    }
+
+    return $folder . '/runtime.log';
 }
 
-function serviceAuditorWriteRuntimeLog(array $config, string $status, string $message): void
+function serviceAuditorWriteRuntimeLog(array $config, string $url, string $status, string $message): void
 {
-    $logFile = serviceAuditorRuntimeLogFile($config);
+    $logFile = serviceAuditorRuntimeLogFile($config, $url);
     $line = '[' . gmdate('c') . '] ' . $status . ' - ' . $message . PHP_EOL;
     @file_put_contents($logFile, $line, FILE_APPEND);
 }
@@ -188,41 +220,70 @@ function serviceAuditorLoadSettings(array $config): array
     return is_array($decoded) ? $decoded : [];
 }
 
-function serviceAuditorLoadResults(array $config): array
+function serviceAuditorLoadResults(array $config, ?string $url = null): array
 {
     if (!is_dir($config['log_root'])) {
         return [];
     }
 
-    $iterator = new RecursiveIteratorIterator(
-        new RecursiveDirectoryIterator($config['log_root'], FilesystemIterator::SKIP_DOTS)
-    );
-
-    $results = [];
-
-    foreach ($iterator as $fileInfo) {
-        if (!$fileInfo->isFile()) {
-            continue;
+    // If URL is specified, only load logs for that URL
+    if ($url !== null && $url !== '') {
+        $logDir = serviceAuditorLogDirectory($url, $config);
+        if (!is_dir($logDir)) {
+            return [];
         }
-
-        $extension = strtolower($fileInfo->getExtension());
-        if ($extension !== $config['log_extension'] && $extension !== 'json') {
-            continue;
+        
+        $results = [];
+        $files = glob($logDir . '/*.' . $config['log_extension']);
+        
+        if (is_array($files)) {
+            foreach ($files as $file) {
+                $contents = file_get_contents($file);
+                if ($contents === false) continue;
+                
+                $decoded = json_decode(trim($contents), true);
+                if (!is_array($decoded)) continue;
+                
+                foreach ($decoded as $entry) {
+                    if (is_array($entry)) {
+                        $entry['log_file'] = $file;
+                        $results[] = $entry;
+                    }
+                }
+            }
         }
+    } else {
+        // Load all results from all URLs
+        $iterator = new RecursiveIteratorIterator(
+            new RecursiveDirectoryIterator($config['log_root'], FilesystemIterator::SKIP_DOTS)
+        );
 
-        $contents = file_get_contents($fileInfo->getPathname());
-        if ($contents === false) {
-            continue;
-        }
+        $results = [];
 
-        $decoded = json_decode(trim($contents), true);
-        if (!is_array($decoded)) {
-            continue;
-        }
-        foreach ($decoded as $entry) {
-            if (is_array($entry)) {
-                $entry['log_file'] = $fileInfo->getPathname();
-                $results[] = $entry;
+        foreach ($iterator as $fileInfo) {
+            if (!$fileInfo->isFile()) {
+                continue;
+            }
+
+            $extension = strtolower($fileInfo->getExtension());
+            if ($extension !== $config['log_extension'] && $extension !== 'json') {
+                continue;
+            }
+
+            $contents = file_get_contents($fileInfo->getPathname());
+            if ($contents === false) {
+                continue;
+            }
+
+            $decoded = json_decode(trim($contents), true);
+            if (!is_array($decoded)) {
+                continue;
+            }
+            foreach ($decoded as $entry) {
+                if (is_array($entry)) {
+                    $entry['log_file'] = $fileInfo->getPathname();
+                    $results[] = $entry;
+                }
             }
         }
     }

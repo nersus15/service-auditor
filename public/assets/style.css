@@ -506,6 +506,60 @@ code {
     background: transparent;
 }
 
+.url-navbar {
+    background: rgba(20, 34, 58, 0.8);
+    border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 16px;
+    padding: 14px 18px;
+    margin-bottom: 20px;
+    backdrop-filter: blur(8px);
+}
+
+.url-nav-container {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex-wrap: wrap;
+}
+
+.url-label {
+    color: var(--muted);
+    font-size: 0.85rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    white-space: nowrap;
+}
+
+.url-select {
+    padding: 10px 12px;
+    border-radius: 12px;
+    border: 1px solid var(--border);
+    background: var(--panel-soft);
+    color: var(--text);
+    font-size: 0.9rem;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    min-width: 280px;
+}
+
+.url-select:hover {
+    border-color: var(--accent);
+    background: rgba(20, 34, 58, 0.8);
+}
+
+.url-select:focus {
+    outline: none;
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px rgba(56, 189, 248, 0.1);
+}
+
+@media (max-width: 640px) {
+    .url-select {
+        min-width: 100%;
+    }
+}
+
 @media (max-width: 640px) {
     .dashboard-grid {
         grid-template-columns: 1fr;

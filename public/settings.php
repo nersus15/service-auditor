@@ -52,8 +52,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
                 <form method="post" class="settings-form">
                     <label>
-                        URL Target
-                        <input type="url" name="check_url" value="<?= htmlspecialchars((string) ($settings['check_url'] ?? '')) ?>" required>
+                        Target URLs (satu per baris)
+                        <textarea name="check_urls" style="font-family: monospace; height: 150px; padding: 10px; border-radius: 12px; border: 1px solid var(--border); background: var(--panel-soft); color: var(--text); resize: vertical;" required><?php 
+                            $urls = $settings['check_urls'] ?? [$settings['check_url'] ?? ''];
+                            echo htmlspecialchars(implode("\n", (array)$urls));
+                        ?></textarea>
                     </label>
                     <label>
                         Interval (menit)

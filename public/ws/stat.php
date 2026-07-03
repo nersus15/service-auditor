@@ -11,14 +11,16 @@ class Stat {
 
         // declare(strict_types=1);
         $config = serviceAuditorConfig();
-        $results = serviceAuditorLoadResults($config);
+        $url = $_GET['url'] ?? null;
+        $results = serviceAuditorLoadResults($config, $url);
         $summary = serviceAuditorSummarize($results);
         $recentResults = $results;
 
 
         $data = [
             "summary" => $summary,
-            "results" => $recentResults
+            "results" => $recentResults,
+            "url" => $url
         ];
 
         echo json_encode($data);

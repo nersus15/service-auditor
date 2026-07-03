@@ -387,9 +387,9 @@ code {
 }
 
 .filter-actions {
-    display: flex;
+    display: block;
     gap: 10px;
-    margin-top: 16px;
+    margin-top: 1.4rem;
     grid-column: span -1;
 }
 

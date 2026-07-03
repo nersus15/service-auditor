@@ -60,10 +60,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         <input type="number" name="check_interval_minutes" min="1" value="<?= (int) ($settings['check_interval_minutes'] ?? 5) ?>" required>
                     </label>
                     <label>
-                        Jadwal Cron
-                        <input type="text" name="check_schedule" value="<?= htmlspecialchars((string) ($settings['check_schedule'] ?? '*/5 * * * *')) ?>" required>
-                    </label>
-                    <label>
                         Timeout (detik)
                         <input type="number" name="timeout_seconds" min="3" value="<?= (int) ($settings['timeout_seconds'] ?? 10) ?>" required>
                     </label>

@@ -36,7 +36,7 @@ $(document).ready(function () {
             var lines = res.data;
             // var escapedString = htmlspecialchars(lines.join('\n'));
             var preTag = $('pre');
-            $("pre").text(htmlspecialchars(lines.join('\n')))
+            $("pre").text((lines.join('\n')))
 
             preTag.parent().scrollTop(preTag[0].scrollHeight);
 

@@ -130,7 +130,7 @@ function serviceAuditorSaveSettings(array $config, array $data): array
 
 function serviceAuditorLastRunFile(array $config): string
 {
-    return $config['app_root'] . '/app/.last_run.json';
+    return $config['app_root'] . '/.last_run.json';
 }
 
 function serviceAuditorShouldRun(array $config, string $url): bool

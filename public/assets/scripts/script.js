@@ -60,9 +60,13 @@ $(document).ready(function () {
 
     function loadDashboard() {
         var url = baseurl + "/ws/stat/dashboard";
+
+        var filters = getLocal('settings');
+        
         if (selectedUrl) {
             url += "?url=" + encodeURIComponent(selectedUrl);
         }
+
         $.get(url).then(res => {
             // Update Summary
             var summary = res.summary;
@@ -156,9 +160,7 @@ $(document).ready(function () {
         var fStatus = $("#filterStatus").val();
         var fReload = $("#autoReload").val();
 
-        if(fDate == "all") {
-            filters.date = null
-        }else if(fDate == "custom"){
+        if(fDate == "custom"){
             filters.date = $("#dateFrom").val() + " - " + $("#dateTo").val();
         }else{
             filters.date = fDate;
@@ -170,17 +172,8 @@ $(document).ready(function () {
             filters.limit = parseInt(fLimit);
         }
 
-        if(fStatus == 'all') {
-            filters.status = null;
-        }else{
-            filters.status = fStatus
-        }
-
-        if(fReload == "off"){
-            filters.autoreload = null;
-        }else{
-            filters.autoreload = fReload;
-        }
+        filters.status = fStatus
+        filters.autoreload = fReload;
 
 
         saveLocal("settings", filters);
@@ -208,25 +201,17 @@ $(document).ready(function () {
             filters = t;
         }
 
-        if(!filters.autoreload){
-            fReload.find("option[value='off']").prop('selected', true).parent().trigger('change');
+        fReload.find("option[value='"+ filters.autoreload +"']").prop('selected', true).parent().trigger('change');
+
+        var arr = filters.date.split(" - ");
+
+        if(arr.length > 1){
+            fDate.find("option[value='custom']").prop('selected', true).parent().trigger('change');
+
+            $("#dateFrom").val(arr[0]).trigger('change');
+            $("#dateTo").val(arr[1]).trigger('change');
         }else{
-            fReload.find("option[value='"+ filters.autoreload +"']").prop('selected', true).parent().trigger('change');
-        }
-
-        if(!filters.date){
-            fDate.find("option[value='all']").prop('selected', true).parent().trigger('change');
-        }else{
-            var arr = filters.date.split(" - ");
-
-            if(arr.length > 1){
-                fDate.find("option[value='custom']").prop('selected', true).parent().trigger('change');
-
-                $("#dateFrom").val(arr[0]).trigger('change');
-                $("#dateTo").val(arr[1]).trigger('change');
-            }else{
-                fDate.find("option[value='"+ filters.date +"']").prop('selected', true).parent().trigger('change');
-            }
+            fDate.find("option[value='"+ filters.date +"']").prop('selected', true).parent().trigger('change');
         }
 
         if(filters.limit == -1){
@@ -235,11 +220,7 @@ $(document).ready(function () {
             fLimit.find("option[value='"+ filters.limit +"']").prop('selected', true).parent().trigger('change');
         }
 
-        if(!filters.status){
-            fStatus.find("option[value='all']").prop('selected', true).parent().trigger('change');
-        }else{
-            fStatus.find("option[value='"+ filters.status +"']").prop('selected', true).parent().trigger('change');
-        }
+        fStatus.find("option[value='"+ filters.status +"']").prop('selected', true).parent().trigger('change');
     }
 
 

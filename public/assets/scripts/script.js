@@ -18,18 +18,20 @@ $(document).ready(function () {
     $("#urlSelector").on("change", function() {
         selectedUrl = $(this).val();
         $("#currentUrl").text(selectedUrl);
-        localStorage.setItem("selectedUrl", selectedUrl);
+        saveLocal("selectedUrl", selectedUrl);
         loadDashboard();
     });
 
     // Load saved URL from localStorage
     var savedUrl = localStorage.getItem("selectedUrl");
+    var currentUrl = $("#urlSelector").val();
+
     if (savedUrl) {
         selectedUrl = savedUrl;
         $("#urlSelector").val(savedUrl);
         $("#currentUrl").text(savedUrl);
-    }else{
-        saveLocal("selectedUrl", $("#currentUrl").val());
+    }else if(currentUrl != ""){
+        saveLocal("selectedUrl", currentUrl);
     }
 
 

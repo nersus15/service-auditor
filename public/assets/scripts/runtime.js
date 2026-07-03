@@ -7,15 +7,19 @@ $(document).ready(function () {
     // URL selector handler
     $("#urlSelector").on("change", function() {
         selectedUrl = $(this).val();
-        localStorage.setItem("selectedUrl", selectedUrl);
+        saveLocal("selectedUrl", selectedUrl);
         loadRuntimeLog();
     });
 
     // Load saved URL from localStorage
     var savedUrl = localStorage.getItem("selectedUrl");
+    var currentUrl = $("#urlSelector").val();
+
     if (savedUrl) {
         selectedUrl = savedUrl;
         $("#urlSelector").val(savedUrl);
+    }else if(currentUrl != ""){
+        saveLocal("selectedUrl", currentUrl);
     }
 
     function saveLocal(key, data, ttl = null) {

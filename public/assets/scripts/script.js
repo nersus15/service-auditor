@@ -28,6 +28,8 @@ $(document).ready(function () {
         selectedUrl = savedUrl;
         $("#urlSelector").val(savedUrl);
         $("#currentUrl").text(savedUrl);
+    }else{
+        saveLocal("selectedUrl", $("#currentUrl").val());
     }
 
 

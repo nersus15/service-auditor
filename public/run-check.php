@@ -6,9 +6,7 @@ require_once __DIR__ . '/../app/functions.php';
 
 $config = serviceAuditorConfig();
 
-echo "========= >Config: " . print_r($config['check_urls'], true);
 foreach($config['check_urls'] as $url){
-    echo $url . " ====> ";
     run($url);
 }
 

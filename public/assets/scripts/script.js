@@ -189,36 +189,36 @@ $(document).ready(function () {
         }
 
         if(!filters.autoreload){
-            fReload.find("option [value='off']").prop('selected', true).parent().trigger('change');
+            fReload.find("option[value='off']").prop('selected', true).parent().trigger('change');
         }else{
-            fReload.find("option [value='"+ filters.autoreload +"']").prop('selected', true).parent().trigger('change');
+            fReload.find("option[value='"+ filters.autoreload +"']").prop('selected', true).parent().trigger('change');
         }
 
         if(!filters.date){
-            fDate.find("option [value='all']").prop('selected', true).parent().trigger('change');
+            fDate.find("option[value='all']").prop('selected', true).parent().trigger('change');
         }else{
             var arr = filters.date.split(" - ");
 
             if(arr.length > 1){
-                fDate.find("option [value='custom']").prop('selected', true).parent().trigger('change');
+                fDate.find("option[value='custom']").prop('selected', true).parent().trigger('change');
 
                 $("#dateFrom").val(arr[0]).trigger('change');
                 $("#dateTo").val(arr[1]).trigger('change');
             }else{
-                fDate.find("option [value='"+ filters.date +"']").prop('selected', true).parent().trigger('change');
+                fDate.find("option[value='"+ filters.date +"']").prop('selected', true).parent().trigger('change');
             }
         }
 
         if(filters.limit == -1){
-            fLimit.find("option [value='unlimited']").prop('selected', true).parent().trigger('change');
+            fLimit.find("option[value='unlimited']").prop('selected', true).parent().trigger('change');
         }else{
-            fLimit.find("option [value='"+ filters.limit +"']").prop('selected', true).parent().trigger('change');
+            fLimit.find("option[value='"+ filters.limit +"']").prop('selected', true).parent().trigger('change');
         }
 
         if(!filters.status){
-            fStatus.find("option [value='all']").prop('selected', true).parent().trigger('change');
+            fStatus.find("option[value='all']").prop('selected', true).parent().trigger('change');
         }else{
-            fStatus.find("option [value='"+ filters.status +"']").prop('selected', true).parent().trigger('change');
+            fStatus.find("option[value='"+ filters.status +"']").prop('selected', true).parent().trigger('change');
         }
     }
 

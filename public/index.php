@@ -117,14 +117,13 @@ $config = serviceAuditorConfig();
                     <h2>Recent Activity</h2>
                     <span class="chip">Last 8 checks</span>
                 </div>
-                <div class="table-wrap custom-scrollbar" style="max-height: 500px; overflow: scroll;">
+                <div class="table-wrap custom-scrollbar" style="max-height: 500px; overflow-y: scroll;">
                     <table id="table-res">
                         <thead>
                             <tr>
                                 <th>Time</th>
                                 <th>Status</th>
                                 <th>Code</th>
-                                <th>Error</th>
                                 <th>Latency</th>
                             </tr>
                         </thead>
@@ -162,6 +161,22 @@ $config = serviceAuditorConfig();
                 <code>*/5 * * * * php /path/to/service-auditor/cron.php >> /dev/null 2>&1</code>
             </section>
         </main>
+    </div>
+
+    <div class="modal-overlay" id="detailModal">
+        <div class="modal-card">
+            <button class="modal-close" id="closeModal" aria-label="Close detail modal">×</button>
+            <h3>Detail Check</h3>
+            <div class="modal-body">
+                <div class="detail-row"><span>Time</span><span id="detailTime">-</span></div>
+                <div class="detail-row"><span>URL</span><span id="detailUrl">-</span></div>
+                <div class="detail-row"><span>Status</span><span id="detailStatus">-</span></div>
+                <div class="detail-row"><span>HTTP Code</span><span id="detailCode">-</span></div>
+                <div class="detail-row"><span>Latency</span><span id="detailLatency">-</span></div>
+                <div class="detail-row"><span>Error</span><code id="detailError">-</code></div>
+                <div class="detail-row detail-full"><span>Body Excerpt</span><pre id="detailBody">-</pre></div>
+            </div>
+        </div>
     </div>
 </body>
     <script src="/assets/scripts/script.js"></script>

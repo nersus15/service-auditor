@@ -49,16 +49,15 @@ $(document).ready(function () {
             tbody.empty();
             if (summary.total == 0) {
                 var text = '<p class="empty-state">Belum ada log yang dibuat. Jalankan cron terlebih dahulu untuk mengisi data.</p>';
-                tr ="<tr><td colspan='5'>" + text + "</td></tr>";
+                tr ="<tr><td colspan='4'>" + text + "</td></tr>";
             } else {
                 results.forEach(row => {
-                    tr += "<tr>";
+                    tr += "<tr data-result='" + encodeURIComponent(JSON.stringify(row)) + "'>";
                     var cls = row.success ? 'ok' : 'bad';
 
                     tr += "<td>" + new Date(row.timestamp).toLocaleString() + "</td>";
                     tr += "<td><span class='badge " + cls + "'>" + (row.success ? "Success" : "Error") + "</span></td>";
                     tr += "<td>" + row.status_code + "</td>";
-                    tr += "<td>" + (row.success ? "-" : ("<pre>" + htmlspecialchars(row.error) + "</pre>")) + "</td>"
                     tr += "<td>" + row.response_time_ms + "</td>";
                     tr += "</tr>";
                 });
@@ -67,6 +66,8 @@ $(document).ready(function () {
             tbody.append(tr);
         });
     }
+
+
 
     function htmlspecialchars(str) {
         const map = {
@@ -81,4 +82,43 @@ $(document).ready(function () {
 
     loadDashboard();
     setInterval(loadDashboard, (1000 * 60));
+
+    const modal = $('#detailModal');
+    const closeModal = $('#closeModal');
+
+    function openModal(result) {
+        $('#detailTime').text(new Date(result.timestamp).toLocaleString());
+        $('#detailUrl').text(result.url || '-');
+        $('#detailStatus').text(result.success ? 'Success' : 'Error');
+        $('#detailCode').text(result.status_code);
+        $('#detailLatency').text(result.response_time_ms + ' ms');
+        $('#detailError').text(result.error || '-');
+        $('#detailBody').text(result.body_excerpt || '-');
+        modal.addClass('open');
+    }
+
+    function closeModalWindow() {
+        modal.removeClass('open');
+    }
+
+    closeModal.on('click', closeModalWindow);
+    modal.on('click', function(event) {
+        if (event.target === this) {
+            closeModalWindow();
+        }
+    });
+
+    $(document).on('click', '#table-res tbody tr', function() {
+        const encoded = $(this).attr('data-result');
+        if (!encoded) {
+            return;
+        }
+
+        try {
+            const result = JSON.parse(decodeURIComponent(encoded));
+            openModal(result);
+        } catch (err) {
+            console.error('Unable to parse row detail:', err);
+        }
+    });
 });

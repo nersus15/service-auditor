@@ -1,2 +1,5 @@
 logs/
 .env
+app/.last_run.json
+app/runtime.log
+app/config.php

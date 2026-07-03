@@ -24,7 +24,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Settings - Service Auditor</title>
-    <link rel="stylesheet" href="/public/assets/style.css">
+    <link rel="stylesheet" href="/assets/style.css">
 </head>
 <body>
     <div class="page-shell">

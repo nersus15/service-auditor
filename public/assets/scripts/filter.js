@@ -1,84 +1,75 @@
-document.addEventListener('DOMContentLoaded', function() {
-    const filterPanel = document.getElementById('filterPanel');
-    const toggleBtn = document.getElementById('toggleFilter');
-    const applyBtn = document.getElementById('applyFilter');
-    const filterDate = document.getElementById('filterDate');
-    const customDateRange = document.getElementById('customDateRange');
+$(document).ready(function() {
+    const $filterPanel = $('#filterPanel');
+    const $toggleBtn = $('#toggleFilter');
+    const $applyBtn = $('#applyFilter');
+    const $filterDate = $('#filterDate');
+    const $customDateRange = $('#customDateRange');
+    
     let isFloating = false;
     let isMinimized = false;
 
-    // Toggle filter minimize/expand with button
-    toggleBtn.addEventListener('click', function(e) {
+    $toggleBtn.on('click', function(e) {
         e.preventDefault();
         e.stopPropagation();
         isMinimized = !isMinimized;
         updateFilterState();
     });
 
-    // Click anywhere on panel when minimized to maximize
-    filterPanel.addEventListener('click', function(e) {
-        if (isMinimized && e.target !== toggleBtn) {
+    $filterPanel.on('click', function(e) {
+        // Checking if the target is NOT the toggle button
+        if (isMinimized && !$(e.target).is($toggleBtn)) {
             isMinimized = false;
             updateFilterState();
         }
     });
 
     function updateFilterState() {
-        if (isMinimized) {
-            filterPanel.classList.add('minimized');
-            toggleBtn.title = 'Expand';
-        } else {
-            filterPanel.classList.remove('minimized');
-            toggleBtn.title = 'Minimize';
-        }
+        $filterPanel.toggleClass('minimized', isMinimized);
+        $toggleBtn.attr('title', isMinimized ? 'Expand' : 'Minimize');
     }
 
-    // Apply filter button handler
-    applyBtn.addEventListener('click', function() {
+    $applyBtn.on('click', function() {
         const filters = {
-            date: document.getElementById('filterDate').value,
-            limit: document.getElementById('filterLimit').value,
-            status: document.getElementById('filterStatus').value,
-            autoReload: document.getElementById('autoReload').value,
-            dateFrom: document.getElementById('dateFrom').value,
-            dateTo: document.getElementById('dateTo').value
+            date: $('#filterDate').val(),
+            limit: $('#filterLimit').val(),
+            status: $('#filterStatus').val(),
+            autoReload: $('#autoReload').val(),
+            dateFrom: $('#dateFrom').val(),
+            dateTo: $('#dateTo').val()
         };
         
-        // Dispatch custom event with filter data
         window.dispatchEvent(new CustomEvent('filterApplied', { detail: filters }));
         
-        // Optional: Log or provide visual feedback
         console.log('Filters applied:', filters);
     });
 
     // Show custom date range when custom option is selected
-    filterDate.addEventListener('change', function() {
-        if (this.value === 'custom') {
-            customDateRange.style.display = 'flex';
+    $filterDate.on('change', function() {
+        if ($(this).val() === 'custom') {
+            $customDateRange.css('display', 'flex');
         } else {
-            customDateRange.style.display = 'none';
+            $customDateRange.hide(); // Sets display to none
         }
     });
 
     // Handle scroll event for floating filter panel
-    window.addEventListener('scroll', function() {
-        const headerHeight = document.querySelector('.hero-card').offsetHeight + 50;
-        const shouldFloat = window.scrollY > headerHeight;
+    $(window).on('scroll', function() {
+        const $heroCard = $('.hero-card');
+        if (!$heroCard.length) return; 
+
+        const headerHeight = $heroCard.outerHeight() + 50;
+        const shouldFloat = $(window).scrollTop() > headerHeight;
 
         if (shouldFloat && !isFloating) {
-            filterPanel.classList.add('floating');
+            $filterPanel.addClass('floating').removeClass('minimized');
             isFloating = true;
-            // Reset to expanded when it becomes floating
             isMinimized = false;
-            filterPanel.classList.remove('minimized');
-            toggleBtn.title = 'Minimize';
+            $toggleBtn.attr('title', 'Minimize');
         } else if (!shouldFloat && isFloating) {
-            filterPanel.classList.remove('floating');
+            $filterPanel.removeClass('floating minimized');
             isFloating = false;
-            // Reset minimize state when returning to normal position
             isMinimized = false;
-            filterPanel.classList.remove('minimized');
-            toggleBtn.title = 'Minimize';
+            $toggleBtn.attr('title', 'Minimize');
         }
     });
 });

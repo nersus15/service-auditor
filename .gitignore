@@ -3,3 +3,4 @@ logs/
 app/.last_run.json
 app/runtime.log
 app/config.php
+app/.last_run.json

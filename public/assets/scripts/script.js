@@ -5,10 +5,10 @@ $(document).ready(function () {
     var interval = null;
     var selectedUrl = null;
     var filters = {
-        "date": null,
+        "date": 'all',
         "limit": -1,
-        "status": null,
-        "autoreload": null,
+        "status": 'all',
+        "autoreload": 'off',
     }
 
     // load settings
@@ -211,9 +211,11 @@ $(document).ready(function () {
 
         fReload.find("option[value='"+ filters.autoreload +"']").prop('selected', true).parent().trigger('change');
 
-        var arr = filters.date.split(" - ");
+        if (filters.date){
+            var arr = filters.date.split(" - ");
+        }
 
-        if(arr.length > 1){
+        if(arr && arr.length > 1){
             fDate.find("option[value='custom']").prop('selected', true);
             fDate.trigger('change');
 

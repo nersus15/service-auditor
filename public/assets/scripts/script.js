@@ -2,6 +2,17 @@ $(document).ready(function () {
     var host = location.host;
     var protocol = location.protocol
     var baseurl = protocol + "//" + host
+    var interval = null;
+    var filters = {
+        "date": null,
+        "limit": -1,
+        "status": null,
+        "autoreload": null,
+    }
+
+    // load settings
+    loadSettings();
+
 
     function saveLocal(key, data, ttl = null) {
         var d = {
@@ -80,9 +91,6 @@ $(document).ready(function () {
         return str.replace(/[&<>"']/g, function(m) { return map[m]; });
     }
 
-    loadDashboard();
-    setInterval(loadDashboard, (1000 * 60));
-
     const modal = $('#detailModal');
     const closeModal = $('#closeModal');
 
@@ -121,4 +129,104 @@ $(document).ready(function () {
             console.error('Unable to parse row detail:', err);
         }
     });
+
+    $("#applyFilter").click(function(){
+        var fDate = $("#filterDate").val();
+        var fLimit = $("#filterLimit").val();
+        var fStatus = $("#filterStatus").val();
+        var fReload = $("#autoReload").val();
+
+        if(fDate == "all") {
+            filters.date = null
+        }else if(fDate == "custom"){
+            filters.date = $("#dateFrom").val() + " - " + $("#dateTo").val();
+        }else{
+            filters.date = fDate;
+        }
+
+        if (fLimit == "unlimited"){
+            filters.limit = -1;
+        }else{
+            filters.limit = parseInt(fLimit);
+        }
+
+        if(fStatus == 'all') {
+            filters.status = null;
+        }else{
+            filters.status = fStatus
+        }
+
+        if(fReload == "off"){
+            filters.autoreload = null;
+        }else{
+            filters.autoreload = fReload;
+        }
+
+
+        saveLocal("settings", filters);
+
+        loadDashboard();
+
+        if(interval){
+            clearInterval(interval);
+        }
+
+        if(filters.autoreload){
+            var m = filters.autoreload.replace("m", "");
+            interval = setInterval(loadDashboard, (1000 * 60 * parseInt(m)));
+        }
+    });
+
+    function loadSettings(){
+        var t = getLocal("settings");
+        var fDate = $("#filterDate");
+        var fLimit = $("#filterLimit");
+        var fStatus = $("#filterStatus");
+        var fReload = $("#autoReload");
+
+        if(t != null) {
+            filters = t;
+        }
+
+        if(!filters.autoreload){
+            fReload.find("option [value='off']").prop('selected', true).parent().trigger('change');
+        }else{
+            fReload.find("option [value='"+ filters.autoreload +"']").prop('selected', true).parent().trigger('change');
+        }
+
+        if(!filters.date){
+            fDate.find("option [value='all']").prop('selected', true).parent().trigger('change');
+        }else{
+            var arr = filters.date.split(" - ");
+
+            if(arr.length > 1){
+                fDate.find("option [value='custom']").prop('selected', true).parent().trigger('change');
+
+                $("#dateFrom").val(arr[0]).trigger('change');
+                $("#dateTo").val(arr[1]).trigger('change');
+            }else{
+                fDate.find("option [value='"+ filters.date +"']").prop('selected', true).parent().trigger('change');
+            }
+        }
+
+        if(filters.limit == -1){
+            fLimit.find("option [value='unlimited']").prop('selected', true).parent().trigger('change');
+        }else{
+            fLimit.find("option [value='"+ filters.limit +"']").prop('selected', true).parent().trigger('change');
+        }
+
+        if(!filters.status){
+            fStatus.find("option [value='all']").prop('selected', true).parent().trigger('change');
+        }else{
+            fStatus.find("option [value='"+ filters.status +"']").prop('selected', true).parent().trigger('change');
+        }
+    }
+
+
+    loadDashboard();
+
+    if(filters.autoreload){
+        var m = filters.autoreload.replace("m", "");
+        interval = setInterval(loadDashboard, (1000 * 60 * parseInt(m)));
+    }
 });

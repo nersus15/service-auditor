@@ -66,7 +66,6 @@ $(document).ready(function () {
         }
 
         for (var key in filters) {
-            if(key == "date" || key == "Date") continue;
             params[key.toLowerCase()] = filters[key];
         }
 

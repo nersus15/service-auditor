@@ -23,7 +23,7 @@ $(document).ready(function () {
     });
 
     // Load saved URL from localStorage
-    var savedUrl = localStorage.getItem("selectedUrl");
+    var savedUrl = getLocal("selectedUrl");
     var currentUrl = $("#urlSelector").val();
 
     if (savedUrl) {
@@ -31,6 +31,7 @@ $(document).ready(function () {
         $("#urlSelector").val(savedUrl);
         $("#currentUrl").text(savedUrl);
     }else if(currentUrl != ""){
+        selectedUrl = currentUrl;
         saveLocal("selectedUrl", currentUrl);
     }
 

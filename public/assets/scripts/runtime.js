@@ -12,13 +12,14 @@ $(document).ready(function () {
     });
 
     // Load saved URL from localStorage
-    var savedUrl = localStorage.getItem("selectedUrl");
+    var savedUrl = getLocal("selectedUrl");
     var currentUrl = $("#urlSelector").val();
 
     if (savedUrl) {
         selectedUrl = savedUrl;
         $("#urlSelector").val(savedUrl);
     }else if(currentUrl != ""){
+        selectedUrl = currentUrl;
         saveLocal("selectedUrl", currentUrl);
     }
 

@@ -192,7 +192,7 @@ $(document).ready(function () {
             clearInterval(interval);
         }
 
-        if(filters.autoreload){
+        if(filters.autoreload && filters.autoreload != 'off'){
             var m = filters.autoreload.replace("m", "");
             interval = setInterval(loadDashboard, (1000 * 60 * parseInt(m)));
         }
@@ -237,7 +237,7 @@ $(document).ready(function () {
 
     loadDashboard();
 
-    if(filters.autoreload){
+    if(filters.autoreload && filters.autoreload != 'off'){
         var m = filters.autoreload.replace("m", "");
         interval = setInterval(loadDashboard, (1000 * 60 * parseInt(m)));
     }
